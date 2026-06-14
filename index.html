@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diet Goal Calculator</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --good: #16a34a;
+      --warn: #d97706;
+      --bad: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb, #38bdf8);
+      color: white;
+      padding: 42px 18px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+    }
+
+    header p {
+      max-width: 760px;
+      margin: 0 auto;
+      opacity: 0.95;
+      font-size: 1.05rem;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 28px auto;
+      padding: 0 18px 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1.35rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin: 14px 0 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 13px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+      background: white;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .hint {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    button {
+      margin-top: 18px;
+      width: 100%;
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--accent);
+      color: white;
+      font-weight: 800;
+      font-size: 1.05rem;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--accent-dark); }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .metric {
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .metric .value {
+      font-size: 1.45rem;
+      font-weight: 900;
+      margin-top: 4px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+
+    .good { background: #dcfce7; color: #166534; }
+    .warn { background: #fef3c7; color: #92400e; }
+    .bad { background: #fee2e2; color: #991b1b; }
+
+    .recommendation {
+      border-left: 5px solid var(--accent);
+      padding: 12px 14px;
+      background: #eff6ff;
+      border-radius: 12px;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px;
+      text-align: left;
+    }
+
+    th { background: #f3f4f6; }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    footer {
+      max-width: 1100px;
+      margin: 0 auto 40px;
+      padding: 0 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 850px) {
+      main { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .result-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Diet Goal Calculator</h1>
+    <p>Estimate BMI, calorie targets, macros, and diet direction for losing fat, maintaining weight, or gaining muscle.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Your body data</h2>
+      <form id="calcForm">
+        <div class="row">
+          <div>
+            <label for="unit">Unit</label>
+            <select id="unit">
+              <option value="metric">Metric: kg / cm</option>
+              <option value="imperial">Imperial: lb / inch</option>
+            </select>
+          </div>
+          <div>
+            <label for="sex">Sex</label>
+            <select id="sex">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="weight">Weight</label>
+            <input id="weight" type="number" min="1" step="0.1" placeholder="e.g., 75" required />
+          </div>
+          <div>
+            <label for="height">Height</label>
+            <input id="height" type="number" min="1" step="0.1" placeholder="e.g., 175" required />
+          </div>
+        </div>
+
+        <label for="age">Age</label>
+        <input id="age" type="number" min="15" max="100" step="1" placeholder="e.g., 27" required />
+
+        <label for="bodyFat">Body fat % <span class="small">(optional)</span></label>
+        <input id="bodyFat" type="number" min="3" max="70" step="0.1" placeholder="e.g., 18" />
+        <div class="hint">Optional. If you know it from DEXA, smart scale, caliper, or InBody, enter it here.</div>
+
+        <label for="activity">Activity level</label>
+        <select id="activity">
+          <option value="1.2">Sedentary: little exercise</option>
+          <option value="1.375">Light: 1–3 days/week</option>
+          <option value="1.55" selected>Moderate: 3–5 days/week</option>
+          <option value="1.725">Very active: 6–7 days/week</option>
+          <option value="1.9">Athlete/physical job</option>
+        </select>
+
+        <label for="goal">Goal</label>
+        <select id="goal">
+          <option value="lose">Lose fat while maintaining muscle</option>
+          <option value="maintain">Maintain weight / recomposition</option>
+          <option value="gain">Gain muscle / lean bulk</option>
+        </select>
+
+        <label for="distance">How far are you from the standard healthy range?</label>
+        <select id="distance">
+          <option value="slight">Slightly away: small adjustment</option>
+          <option value="moderate" selected>Moderately away: steady plan</option>
+          <option value="high">Far away: slower, safer, more conservative plan</option>
+        </select>
+
+        <button type="submit">Calculate my plan</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Results</h2>
+      <div id="emptyState" class="small">Fill the form and click calculate. Your plan will appear here.</div>
+      <div id="results" style="display:none;">
+        <div class="result-grid">
+          <div class="metric">
+            <div class="label">BMI</div>
+            <div class="value" id="bmiValue">--</div>
+            <span class="pill" id="bmiPill">--</span>
+          </div>
+          <div class="metric">
+            <div class="label">Maintenance</div>
+            <div class="value" id="maintenanceValue">--</div>
+            <div class="small">kcal/day</div>
+          </div>
+          <div class="metric">
+            <div class="label">Target</div>
+            <div class="value" id="targetValue">--</div>
+            <div class="small">kcal/day</div>
+          </div>
+          <div class="metric">
+            <div class="label">Expected pace</div>
+            <div class="value" id="paceValue">--</div>
+            <div class="small">per week</div>
+          </div>
+        </div>
+
+        <div class="recommendation" id="adviceBox"></div>
+
+        <h2 style="margin-top: 22px;">Daily macros</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Macro</th>
+              <th>Grams/day</th>
+              <th>Calories</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Protein</td>
+              <td id="proteinG">--</td>
+              <td id="proteinCal">--</td>
+            </tr>
+            <tr>
+              <td>Fat</td>
+              <td id="fatG">--</td>
+              <td id="fatCal">--</td>
+            </tr>
+            <tr>
+              <td>Carbs</td>
+              <td id="carbG">--</td>
+              <td id="carbCal">--</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="small" id="bodyCompText"></p>
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>How to use this</h2>
+      <p>
+        Track your morning body weight and waist 3–7 times per week, then look at weekly averages.
+        If your weight is not moving after 2–3 weeks, adjust calories by about 100–200 kcal/day.
+        Try to keep lifting performance stable during fat loss.
+      </p>
+      <p class="small">
+        This website gives general education only. It is not medical advice. For medical conditions,
+        eating disorders, pregnancy, diabetes, kidney disease, or medication interactions, ask a physician
+        or registered dietitian.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    BMI categories follow common adult screening ranges. BMI is useful but imperfect because it does not directly measure body composition.
+  </footer>
+
+  <script>
+    function round(n, digits = 0) {
+      const p = Math.pow(10, digits);
+      return Math.round(n * p) / p;
+    }
+
+    function getBmiCategory(bmi) {
+      if (bmi < 18.5) return { text: "Underweight", cls: "warn" };
+      if (bmi < 25) return { text: "Healthy range", cls: "good" };
+      if (bmi < 30) return { text: "Overweight", cls: "warn" };
+      return { text: "Obesity range", cls: "bad" };
+    }
+
+    function activityText(goal) {
+      if (goal === "lose") return "Prioritize high protein, vegetables, fruits, whole grains, and enough carbs around training. Use a moderate deficit so strength does not crash.";
+      if (goal === "maintain") return "Eat near maintenance, keep protein high, train progressively, and use waist + strength as your main recomposition signals.";
+      return "Use a small surplus, not a dirty bulk. Increase carbs first so training performance improves while fat gain stays controlled.";
+    }
+
+    document.getElementById("calcForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const unit = document.getElementById("unit").value;
+      const sex = document.getElementById("sex").value;
+      const age = Number(document.getElementById("age").value);
+      const activity = Number(document.getElementById("activity").value);
+      const goal = document.getElementById("goal").value;
+      const distance = document.getElementById("distance").value;
+      const bodyFat = Number(document.getElementById("bodyFat").value);
+
+      let weightInput = Number(document.getElementById("weight").value);
+      let heightInput = Number(document.getElementById("height").value);
+
+      let kg, cm;
+      if (unit === "metric") {
+        kg = weightInput;
+        cm = heightInput;
+      } else {
+        kg = weightInput * 0.45359237;
+        cm = heightInput * 2.54;
+      }
+
+      const meters = cm / 100;
+      const bmi = kg / (meters * meters);
+
+      // Mifflin-St Jeor BMR
+      const sexConstant = sex === "male" ? 5 : -161;
+      const bmr = 10 * kg + 6.25 * cm - 5 * age + sexConstant;
+      const maintenance = bmr * activity;
+
+      let calorieAdjustment = 0;
+      let pace = "stable";
+
+      if (goal === "lose") {
+        calorieAdjustment = distance === "slight" ? -300 : distance === "moderate" ? -450 : -600;
+        pace = "0.5–1.0% loss";
+      } else if (goal === "maintain") {
+        calorieAdjustment = 0;
+        pace = "stable";
+      } else {
+        calorieAdjustment = distance === "slight" ? 150 : distance === "moderate" ? 250 : 350;
+        pace = "0.25–0.5% gain";
+      }
+
+      let targetCalories = maintenance + calorieAdjustment;
+      if (targetCalories < 1300) targetCalories = 1300;
+
+      // Macro logic
+      let proteinPerKg = goal === "lose" ? 2.0 : goal === "maintain" ? 1.8 : 1.8;
+      if (bodyFat && bodyFat > 25 && goal === "lose") proteinPerKg = 1.8;
+
+      const proteinG = Math.round(proteinPerKg * kg);
+      let fatPerKg = goal === "lose" ? 0.7 : goal === "maintain" ? 0.8 : 0.9;
+      let fatG = Math.round(fatPerKg * kg);
+
+      const proteinCalories = proteinG * 4;
+      const fatCalories = fatG * 9;
+      let carbCalories = targetCalories - proteinCalories - fatCalories;
+
+      if (carbCalories < 80 * 4) {
+        const minCarbCalories = 80 * 4;
+        carbCalories = minCarbCalories;
+        fatG = Math.max(35, Math.round((targetCalories - proteinCalories - carbCalories) / 9));
+      }
+
+      const carbG = Math.max(0, Math.round(carbCalories / 4));
+
+      const bmiCat = getBmiCategory(bmi);
+      document.getElementById("bmiValue").textContent = round(bmi, 1);
+      const pill = document.getElementById("bmiPill");
+      pill.textContent = bmiCat.text;
+      pill.className = "pill " + bmiCat.cls;
+
+      document.getElementById("maintenanceValue").textContent = Math.round(maintenance);
+      document.getElementById("targetValue").textContent = Math.round(targetCalories);
+      document.getElementById("paceValue").textContent = pace;
+
+      document.getElementById("proteinG").textContent = proteinG + " g";
+      document.getElementById("proteinCal").textContent = proteinCalories + " kcal";
+      document.getElementById("fatG").textContent = fatG + " g";
+      document.getElementById("fatCal").textContent = (fatG * 9) + " kcal";
+      document.getElementById("carbG").textContent = carbG + " g";
+      document.getElementById("carbCal").textContent = (carbG * 4) + " kcal";
+
+      let advice = "<strong>Suggested direction:</strong> " + activityText(goal);
+      if (goal === "lose" && bmi < 18.5) {
+        advice += " Because BMI is under the standard healthy range, aggressive fat loss is not recommended.";
+      }
+      if (goal === "gain" && bmi >= 30) {
+        advice += " Because BMI is in the obesity screening range, a maintenance/recomposition or fat-loss phase may be safer before a surplus.";
+      }
+      document.getElementById("adviceBox").innerHTML = advice;
+
+      let bodyText = "";
+      if (bodyFat) {
+        const leanMass = kg * (1 - bodyFat / 100);
+        bodyText = "Estimated lean body mass: " + round(leanMass, 1) + " kg. Body-fat data can improve interpretation because BMI does not separate fat mass from muscle mass.";
+      } else {
+        bodyText = "No body-fat percentage entered. This plan uses weight, height, age, sex, and activity level only.";
+      }
+      document.getElementById("bodyCompText").textContent = bodyText;
+
+      document.getElementById("emptyState").style.display = "none";
+      document.getElementById("results").style.display = "block";
+    });
+  </script>
+</body>
+</html>
